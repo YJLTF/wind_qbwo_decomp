@@ -118,6 +118,71 @@ def upload_file():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/demo', methods=['GET'])
+def load_demo():
+    """加载测试数据接口"""
+    demo_file = 'data/raw/test_wind_power.csv'
+
+    if not os.path.exists(demo_file):
+        return jsonify({'success': False, 'error': '测试数据文件不存在'})
+
+    task_id = str(uuid.uuid4())
+    filepath = demo_file
+
+    try:
+        df = pd.read_csv(filepath)
+
+        # 查找时间列和功率列
+        time_col = None
+        power_col = None
+
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if 'time' in col_lower or 'date' in col_lower or 'dt' in col_lower:
+                time_col = col
+            elif 'power' in col_lower or 'wind' in col_lower or 'kw' in col_lower or 'mw' in col_lower:
+                power_col = col
+
+        if time_col is None:
+            time_col = df.columns[0]
+        if power_col is None:
+            power_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
+
+        df[time_col] = pd.to_datetime(df[time_col])
+        df = df.sort_values(time_col)
+
+        rows = len(df)
+        date_range = [str(df[time_col].min()), str(df[time_col].max())]
+        sampling_rate = "1h"
+
+        tasks[task_id] = {
+            'filepath': filepath,
+            'time_col': time_col,
+            'power_col': power_col,
+            'filename': 'test_wind_power.csv',
+            'rows': rows,
+            'date_range': date_range,
+            'sampling_rate': sampling_rate,
+            'params': None,
+            'results': None,
+            'status': 'uploaded'
+        }
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'task_id': task_id,
+                'filename': 'test_wind_power.csv (测试数据)',
+                'rows': rows,
+                'date_range': date_range,
+                'sampling_rate': sampling_rate,
+                'columns': list(df.columns)
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     """执行分析接口"""

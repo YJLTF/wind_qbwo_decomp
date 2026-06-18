@@ -9,6 +9,26 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePeriodRange();
 });
 
+// 加载测试数据
+async function loadDemoData() {
+    try {
+        showLoading('正在加载测试数据...');
+        const response = await fetch('/api/demo');
+        const result = await response.json();
+
+        if (result.success) {
+            currentTaskId = result.data.task_id;
+            showFileInfo(result.data);
+            document.getElementById('analyzeBtn').disabled = false;
+            hideLoading();
+        } else {
+            showError(result.error || '加载失败');
+        }
+    } catch (error) {
+        showError('加载出错: ' + error.message);
+    }
+}
+
 // 上传区域初始化
 function initUploadArea() {
     const uploadArea = document.getElementById('uploadArea');
