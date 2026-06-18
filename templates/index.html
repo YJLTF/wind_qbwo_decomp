@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WindQBWO - 风电准双周振荡分析系统</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="grid-overlay"></div>
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <h1>WindQBWO</h1>
+            </div>
+            <p class="tagline">风电出力准双周振荡识别与分解系统</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 数据上传区 -->
+            <section class="card upload-section">
+                <div class="section-header">
+                    <h2>📂 数据上传</h2>
+                    <span class="badge">支持 CSV / Parquet</span>
+                </div>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 16V4m0 0L8 8m4-4l4 4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"></path>
+                        </svg>
+                    </div>
+                    <p class="upload-text">拖拽文件到此处或 <label class="upload-link">点击上传<input type="file" id="fileInput" accept=".csv,.parquet" hidden></label></p>
+                    <p class="upload-hint">文件应包含时间列和功率列</p>
+                </div>
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">文件名</span>
+                            <span class="info-value" id="fileName">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">数据行数</span>
+                            <span class="info-value" id="rowCount">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">时间范围</span>
+                            <span class="info-value" id="dateRange">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">采样率</span>
+                            <span class="info-value" id="samplingRate">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 参数设置区 -->
+            <section class="card params-section">
+                <div class="section-header">
+                    <h2>⚙️ 参数设置</h2>
+                    <button class="btn-reset" onclick="resetParams()">重置</button>
+                </div>
+                <div class="params-grid">
+                    <div class="param-group">
+                        <label>周期范围（天）</label>
+                        <div class="range-inputs">
+                            <input type="number" id="periodMin" value="7" min="1" max="30">
+                            <span>—</span>
+                            <input type="number" id="periodMax" value="15" min="1" max="30">
+                            <span>天</span>
+                        </div>
+                        <div class="range-slider">
+                            <input type="range" id="periodRange" min="1" max="30" value="7" oninput="updatePeriodRange()">
+                            <div class="range-fill" id="rangeFill"></div>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>去趋势窗口</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="detrendWindow" value="30" min="7" max="90">
+                            <span>天</span>
+                        </div>
+                    </div>
+                    <div class="param-group">
+                        <label>EEMD 试验次数</label>
+                        <input type="number" id="eemdTrials" value="50" min="10" max="200" step="10">
+                    </div>
+                    <div class="param-group">
+                        <label>噪声标准差</label>
+                        <input type="number" id="noiseStd" value="0.1" min="0.01" max="0.5" step="0.01">
+                    </div>
+                    <div class="param-group">
+                        <label>显著性水平</label>
+                        <select id="significance">
+                            <option value="0.90">90%</option>
+                            <option value="0.95" selected>95%</option>
+                            <option value="0.99">99%</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 分析按钮 -->
+            <div class="action-bar">
+                <button class="btn-analyze" id="analyzeBtn" onclick="startAnalysis()" disabled>
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">开始分析</span>
+                </button>
+            </div>
+
+            <!-- 进度指示 -->
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">正在分析...</div>
+                <div class="progress-steps">
+                    <div class="step" data-step="1">预处理</div>
+                    <div class="step" data-step="2">频谱分析</div>
+                    <div class="step" data-step="3">时频分析</div>
+                    <div class="step" data-step="4">EEMD分解</div>
+                    <div class="step" data-step="5">验证</div>
+                </div>
+            </div>
+
+            <!-- 结果展示区 -->
+            <section class="card results-section" id="resultsSection" style="display: none;">
+                <div class="section-header">
+                    <h2>📊 分析结果</h2>
+                    <div class="stats-summary" id="statsSummary"></div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>原始风电功率</h3>
+                        <div id="chartOriginal" class="chart"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>去趋势序列</h3>
+                        <div id="chartDetrended" class="chart"></div>
+                    </div>
+                    <div class="chart-container full-width">
+                        <h3>功率谱分析</h3>
+                        <div id="chartSpectrum" class="chart"></div>
+                    </div>
+                    <div class="chart-container full-width">
+                        <h3>小波功率谱（时频分析）</h3>
+                        <div id="chartWavelet" class="chart"></div>
+                    </div>
+                    <div class="chart-container full-width">
+                        <h3>EEMD分解</h3>
+                        <div id="chartIMF" class="chart"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>准双周振荡分量</h3>
+                        <div id="chartQBWO" class="chart"></div>
+                    </div>
+                    <div class="chart-container full-width">
+                        <h3>交叉验证</h3>
+                        <div id="chartValidation" class="chart"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>WindQBWO - 风电准双周振荡识别与分解系统 | Powered by Python & Plotly</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
