@@ -36,9 +36,9 @@ graph TD
 
 ---
 
-2. 模块设计与实施步骤
+## 2. 模块设计与实施步骤
 
-2.1 数据预处理模块 preprocessing.py
+### 2.1 数据预处理模块 preprocessing.py
 
 目标：消除年尺度趋势，聚焦天气尺度波动，统一时间分辨率。
 
@@ -60,7 +60,7 @@ detrended = df_1h['power'] - trend
 
 ---
 
-2.2 全局周期检验模块 spectral_analysis.py
+### 2.2 全局周期检验模块 spectral_analysis.py
 
 目标：判断整个年份中 7–15 天频段是否存在 统计显著的平均谱峰。
 
@@ -80,7 +80,7 @@ detrended = df_1h['power'] - trend
 
 ---
 
-2.3 时频定位模块 wavelet_analysis.py
+### 2.3 时频定位模块 wavelet_analysis.py
 
 目标：揭示 7–15 天周期强度的 时间演变特征，定位“何时强、何时弱”。
 
@@ -112,7 +112,7 @@ sig_mask = power / sig95 > 1   # 显著区域
 
 ---
 
-2.4 自适应分解模块 eemd_decomp.py
+### 2.4 自适应分解模块 eemd_decomp.py
 
 目标：从序列中 直接提取 7–15 天振荡成分，计算其方差贡献。
 
@@ -145,7 +145,7 @@ for i, imf in enumerate(imfs):
 
 ---
 
-2.5 结果验证与交叉比对模块 validation.py
+### 2.5 结果验证与交叉比对模块 validation.py
 
 目标：确保分解结果的物理一致性。
 
@@ -158,7 +158,7 @@ for i, imf in enumerate(imfs):
 
 ---
 
-3. 环境依赖
+## 3. 环境依赖
 
 · Python 3.9+
 · 核心库：
@@ -176,7 +176,7 @@ pip install numpy pandas matplotlib scipy pycwt EMD-signal statsmodels
 
 ---
 
-4. 项目文件结构
+## 4. 项目文件结构
 
 ```
 wind_qbwo_decomp/
@@ -198,7 +198,7 @@ wind_qbwo_decomp/
 
 ---
 
-5. 预期成果
+## 5. 预期成果
 
 · 全年风电功率在 7–15 天尺度的 平均谱特征 及显著性判断；
 · 准双周振荡 强度随时间的动态变化图谱（小波谱）；
@@ -207,7 +207,7 @@ wind_qbwo_decomp/
 
 ---
 
-6. 注意事项
+## 6. 注意事项
 
 · 红噪声检验 是可靠性的关键：风电序列通常具有强自相关性，必须使用 AR(1) 背景，否则可能误报周期。
 · 去趋势窗口选择：30 天窗口可有效保留 7–15 天波动；若需分析更短周期，可调整窗口至 15 天，但需注意低频泄漏。
