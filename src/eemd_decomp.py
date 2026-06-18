@@ -27,7 +27,7 @@ def run_eemd_analysis(detrended_series, period_min=7, period_max=15,
     try:
         from PyEMD import EEMD
         eemd = EEMD(trials=trials, noise_width=noise_std)
-        imfs = eemd.emd(data)
+        imfs = eemd.emd(data, np.arange(len(data)))
     except ImportError:
         # 简化实现：使用scipy的经验模态分解近似
         imfs = np.zeros((5, n))

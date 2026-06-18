@@ -61,7 +61,7 @@ def run_wavelet_analysis(detrended_series, time_index, period_min=7, period_max=
     time_days = np.arange(n) / 24
 
     # 创建热力图
-    fig = make_subplots(rows=2, cols=1, heights=[3, 1],
+    fig = make_subplots(rows=2, cols=1, row_heights=[0.75, 0.25],
                         subplot_titles=('小波功率谱', '去趋势序列'),
                         vertical_spacing=0.08)
 

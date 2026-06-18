@@ -4,6 +4,7 @@
 import numpy as np
 from scipy import signal
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 def butterworth_bandpass(data, period_min, period_max, dt=1.0):
     """
