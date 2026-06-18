@@ -230,10 +230,14 @@ def analyze():
             detrend_window=task['params']['detrend_window']
         )
 
+        # 统一数据引用
+        detrended_series = preprocess_result['detrended_series']
+        time_index = preprocess_result['time_index']
+
         # 执行频谱分析
         spectral_result = run_spectral_analysis(
-            preprocess_result['detrended'],
-            preprocess_result['time_index'],
+            detrended_series,
+            time_index,
             period_min=task['params']['period_min'],
             period_max=task['params']['period_max'],
             significance=task['params']['significance']
@@ -241,8 +245,8 @@ def analyze():
 
         # 执行小波分析
         wavelet_result = run_wavelet_analysis(
-            preprocess_result['detrended'],
-            preprocess_result['time_index'],
+            detrended_series,
+            time_index,
             period_min=task['params']['period_min'],
             period_max=task['params']['period_max'],
             significance=task['params']['significance']
@@ -250,7 +254,7 @@ def analyze():
 
         # 执行EEMD分解
         eemd_result = run_eemd_analysis(
-            preprocess_result['detrended'],
+            detrended_series,
             period_min=task['params']['period_min'],
             period_max=task['params']['period_max'],
             trials=task['params']['eemd_trials'],
@@ -259,7 +263,7 @@ def analyze():
 
         # 执行验证
         validation_result = run_validation(
-            preprocess_result['detrended'],
+            detrended_series,
             eemd_result['qbwo_component'],
             period_min=task['params']['period_min'],
             period_max=task['params']['period_max']
@@ -276,11 +280,12 @@ def analyze():
         task['status'] = 'completed'
 
         # 生成统计摘要
+        dp = eemd_result.get('dominant_period')
         stats = {
-            'significance': spectral_result.get('is_significant', False),
-            'dominant_period': eemd_result.get('dominant_period', 'N/A'),
-            'variance_contribution': eemd_result.get('variance_ratio', 0) * 100,
-            'correlation': validation_result.get('correlation', 0)
+            'significance': bool(spectral_result.get('is_significant', False)),
+            'dominant_period': round(float(dp), 2) if dp not in (None, 'N/A') else None,
+            'variance_contribution': round(float(eemd_result.get('variance_ratio', 0)) * 100, 2),
+            'correlation': round(float(validation_result.get('correlation', 0)), 3)
         }
 
         return jsonify({
